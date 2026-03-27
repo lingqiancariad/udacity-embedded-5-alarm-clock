@@ -1,20 +1,17 @@
 #include "clock.h"
 
 // Hardware pins for buttons, alarm switch and buzzer pin
-#define MENU_PIN   16
-#define PLUS_PIN   4
-#define MINUS_PIN  2
-#define OK_PIN     0
-#define ALARM_PIN  15
-#define BUZZER_PIN 12
+#define MENU_PIN      16
+#define PLUS_PIN      4
+#define MINUS_PIN     2
+#define OK_PIN        0
+#define ALARM_PIN     15
+#define BUZZER_PIN    12
 #define DISPLAY_CLC   5
-#define DISPLAY_DATA 18
+#define DISPLAY_DATA  18
 
 TM1637 display(DISPLAY_CLC, DISPLAY_DATA);
 Clock clk;
-
-volatile int counter = 0;
-unsigned long lastInterruptTime = 0;
 
 // ISRs for buttons
 static void button_menu_pressed(void)
@@ -47,18 +44,6 @@ static void alarm_status_changed(void)
   clk.turn_alarm(digitalRead(ALARM_PIN));
 }
 
-
-
-// Interrupt Service Routine (ISR)
-void IRAM_ATTR handleButtonPress() {
-  unsigned long interruptTime = millis();
-  // Entprellen (Debouncing)
-  if (interruptTime - lastInterruptTime > 200) {
-    counter++;
-  }
-  lastInterruptTime = interruptTime;
-}
-
 void setup() {
   
   // Configure buttons as inputs with pull-up
@@ -72,13 +57,11 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(MENU_PIN), button_menu_pressed, FALLING);
   attachInterrupt(digitalPinToInterrupt(OK_PIN), button_ok_pressed, FALLING);
   attachInterrupt(digitalPinToInterrupt(ALARM_PIN), alarm_status_changed, CHANGE);
-  //attachInterrupt(digitalPinToInterrupt(PLUS_PIN), button_plus_pressed, FALLING);
+  attachInterrupt(digitalPinToInterrupt(PLUS_PIN), button_plus_pressed, FALLING);
   attachInterrupt(digitalPinToInterrupt(MINUS_PIN), button_minus_pressed, FALLING);
 
   display.init();
   display.set(BRIGHT_TYPICAL);
-
-  attachInterrupt(digitalPinToInterrupt(PLUS_PIN), handleButtonPress, FALLING);
   
   // Clock class init
   clk.init(&display, BUZZER_PIN);

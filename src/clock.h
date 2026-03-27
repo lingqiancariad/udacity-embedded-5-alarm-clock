@@ -1,5 +1,4 @@
-#ifndef CLOCK_H
-#define CLOCK_H
+#pragma once
 
 #include <cstdint>
 #include <Arduino.h>
@@ -23,22 +22,22 @@ private:
     // Timer variable to count time
     hw_timer_t* timer = NULL;
 
-    // TODO: Add other private variables here
+    /* Task1:   Create AlarmTone object. Will be initialized by init()
+    */
+    AlarmTone alarm_tone;
+
+    /* Task1:   Both hour and minutes equal 0 this makes the clock time starts at 00:00
+    */
     uint8_t hour_time = 0;
     uint8_t minutes_time = 0;
     uint8_t seconds_time = 0;
-    uint32_t time_current = 0;
-    
+
+    /* Task3:   Both hour and minutes equal 0 this makes the alarm time set at 00:00 if no setup.
+    */
     uint8_t hour_alarm = 0;
     uint8_t minutes_alarm = 0;
-    uint32_t time_alarm = 0;
 
     bool alarm_on = false;
-
-    ButtonType button_type;
-
-    AlarmTone alarm_tone;
-
 
 public:
     // Constructor
@@ -63,9 +62,4 @@ public:
     // Clock functions 
     void show();
     void run();
-
-    // TODO: Add other public variables/functions here
-    
 };
-
-#endif
