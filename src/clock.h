@@ -21,9 +21,24 @@ private:
     TM1637* display = NULL;
 
     // Timer variable to count time
-    hw_timer_t *timer = NULL;
+    hw_timer_t* timer = NULL;
 
     // TODO: Add other private variables here
+    uint8_t hour_time = 0;
+    uint8_t minutes_time = 0;
+    uint8_t seconds_time = 0;
+    uint32_t time_current = 0;
+    
+    uint8_t hour_alarm = 0;
+    uint8_t minutes_alarm = 0;
+    uint32_t time_alarm = 0;
+
+    bool alarm_on = false;
+
+    ButtonType button_type;
+
+    AlarmTone alarm_tone;
+
 
 public:
     // Constructor
@@ -43,11 +58,14 @@ public:
     void turn_alarm(bool on_off);
     void check_alarm();
 
+    void tick();
+
     // Clock functions 
     void show();
     void run();
 
     // TODO: Add other public variables/functions here
+    
 };
 
 #endif
