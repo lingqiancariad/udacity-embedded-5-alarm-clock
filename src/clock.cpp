@@ -167,4 +167,13 @@ void Clock::run()
     timerAlarmWrite(timer, 1000000, true);
     // 5. Start the timer!
     timerAlarmEnable(timer);
+
+    /* timer solution for Wokwi online for esp32 arduino core 3.0
+
+    global_clock_ptr = this;
+    timer = timerBegin(1000000); // V3 API
+    timerAttachInterrupt(timer, &update_time); // V3 API
+    timerAlarm(timer, 1000000, true, 0); // V3 API
+    
+    */
 }
