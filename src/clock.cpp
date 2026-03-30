@@ -1,11 +1,14 @@
 /* 
-*   FUNCTION CHECKLIST:
-*   1. CLOCK:               done
-*   2. SET TIME:            done
-*   3. ALARM:               done
-    4. ALARM ON/OFF SWITCH: 
-*   4. BUTTONS:
-*   ... 
+    FUNCTION CHECKLIST:
+    1. CLOCK:                       done
+    2. SET TIME:                    done
+    3. SET ALARM:                   done
+    4. ALARM ON/OFF SWITCH:         done
+    5. MENU BUTTON:                 
+    6. SET CURRENT TIME BY BUTTONS: 
+    7. SET ALARM TIME BY BUTTONS:   
+    8. CLEAR ALARM BY OK BUTTON:    
+   ... 
 */
 
 #include "clock.h"
