@@ -13,6 +13,20 @@ enum ButtonType
   BUTTON_OK,
 };
 
+enum MenuStatus
+{
+  SHOWTIME,
+  SETTIME,
+  SETALARM,
+};
+
+enum OKStatus
+{
+  SETTIMEDONE,
+  SETHOUR,
+  SETMINUTE,
+};
+
 class Clock
 {
 private:
@@ -41,6 +55,9 @@ private:
     uint32_t time_alarm = 0; 
     bool alarm_on = true;
 
+    MenuStatus status_button_menu = SHOWTIME;
+    OKStatus status_button_OK  = SETTIMEDONE;
+
 public:
     // Constructor
     Clock();
@@ -63,5 +80,10 @@ public:
 
     // Clock functions 
     void show();
+    void show_time();
+    void show_time_hour_blink();
+    void show_time_minute_blink();
+    void show_alarm_hour_blink();
+    void show_alarm_minute_blink();
     void run();
 };

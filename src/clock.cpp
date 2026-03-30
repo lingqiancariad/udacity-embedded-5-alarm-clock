@@ -13,6 +13,7 @@
 
 #include "clock.h"
 #include "stdio.h"
+#include <iostream>
 
 /* TASK 1:  Create the global clock pointer to help loading the update_time() into timer interrupt
 */
@@ -73,26 +74,56 @@ void Clock::set_alarm(uint8_t hour, uint8_t minutes)
 
 // Clock::menu_pressed(): Tell the internal clock that a button was pressed
 //                        type: The button that was pressed
-void Clock::button_pressed(ButtonType type) 
+void Clock::button_pressed(ButtonType button_type) 
 {
-    /*
-    switch (type) {
-        case ButtonType::BUTTON_MENU:
-            // todo
+    switch (button_type) {
+        case BUTTON_MENU:
+            // Execute "Status Lock" for changing status_button_menu, if button 'OK' is NOT idle.
+            if (status_button_OK == SETTIMEDONE) {
+                switch(status_button_menu) {
+                    case SHOWTIME:
+                        status_button_menu = SETTIME;
+                        break;
+                    case SETTIME:
+                        status_button_menu = SETALARM;
+                        break;
+                    case SETALARM:
+                        status_button_menu = SHOWTIME;
+                        break;
+                }
+            }
             break;
-        case ButtonType::BUTTON_MINUS:
+        case BUTTON_MINUS:
             // todo
+            std::cout << "Starting a new adventure...\n";
             break;
-        case ButtonType::BUTTON_OK:
-            // todo
+        case BUTTON_OK:
+            // Execute "Status Lock" for changing status_button_OK, if button 'MENU' is idle.
+            if (status_button_menu != SHOWTIME) {
+                switch (status_button_OK) {
+                    case SETTIMEDONE:
+                        status_button_OK = SETHOUR;
+                        break;
+                    case SETHOUR:
+                        status_button_OK = SETMINUTE;
+                        break;
+                    case SETMINUTE:
+                        status_button_OK = SETTIMEDONE;
+                        status_button_menu = SHOWTIME;
+                        break;
+                    default:                                            
+                        break;
+                }
+            }
             break;
-        case ButtonType::BUTTON_PLUS:
+        case BUTTON_PLUS:
             // todo
+            std::cout << "Starting a new adventure...\n";
             break;
         default:
-            std::cout << "[Error:] ButtonType not valid!\n"; 
-        
-    }*/
+            std::cout << "Starting a new adventure...\n";
+            break;
+    }
 }
 
 /* Task 3:  Enable or disable alarm
@@ -106,22 +137,16 @@ void Clock::turn_alarm(bool on_off)
     }
 }
 
-/* BASIC FUNCTION:  Load and show current time in THIS Clock object on display
-*/
-void Clock::show()
-{
-    int8_t display_buffer[4];
-
+void Clock::show_time() {
+    int8_t display_buffer_time[4];
     // Split hours into two digits (e.g., 12 -> 1 and 2)
-    display_buffer[0] = hour_time / 10;
-    display_buffer[1] = hour_time % 10;
-
+    display_buffer_time[0] = hour_time / 10;
+    display_buffer_time[1] = hour_time % 10;
     // Split minutes into two digits (e.g., 45 -> 4 and 5)
-    display_buffer[2] = minutes_time / 10;
-    display_buffer[3] = minutes_time % 10;
-
-    // Turn on the colon (:) in the middle
-    // display->point(true);
+    display_buffer_time[2] = minutes_time / 10;
+    display_buffer_time[3] = minutes_time % 10;
+    // Send to the hardware
+    display->display(display_buffer_time);
 
     /* Task 5:  Make the colon blinks every two seconds.
     *           Use the modulo operator (%) to check if the second is even or odd.
@@ -131,9 +156,153 @@ void Clock::show()
     } else {
         display->point(false);
     }
-    
-    // Send to the hardware
-    display->display(display_buffer);
+}
+
+void Clock::show_time_hour_blink() {
+    int8_t display_buffer_time_hour[4];
+
+    if (seconds_time % 2 == 0) {
+        // Split hours into two digits (e.g., 12 -> 1 and 2)
+        display_buffer_time_hour[0] = hour_time / 10;
+        display_buffer_time_hour[1] = hour_time % 10;
+        // Split minutes into two digits (e.g., 45 -> 4 and 5)
+        display_buffer_time_hour[2] = minutes_time / 10;
+        display_buffer_time_hour[3] = minutes_time % 10;
+        display->display(display_buffer_time_hour);  
+    } else {
+        // NOT display HOURS
+        display_buffer_time_hour[0] = ' ';
+        display_buffer_time_hour[1] = ' ';
+        // ONLY display MINUTES 
+        display_buffer_time_hour[2] = minutes_time / 10;
+        display_buffer_time_hour[3] = minutes_time % 10;
+        display->display(display_buffer_time_hour);
+    }
+    // Display colon always
+    display->point(true);
+}
+
+void Clock::show_time_minute_blink() {
+    int8_t display_buffer_time_minute[4];
+
+    if (seconds_time % 2 == 0) {
+        // Split hours into two digits (e.g., 12 -> 1 and 2)
+        display_buffer_time_minute[0] = hour_time / 10;
+        display_buffer_time_minute[1] = hour_time % 10;
+        // Split minutes into two digits (e.g., 45 -> 4 and 5)
+        display_buffer_time_minute[2] = minutes_time / 10;
+        display_buffer_time_minute[3] = minutes_time % 10;
+        display->display(display_buffer_time_minute);  
+    } else {
+        // NOT display HOURS
+        display_buffer_time_minute[0] = hour_time / 10;
+        display_buffer_time_minute[1] = hour_time % 10;
+        // ONLY display MINUTES 
+        display_buffer_time_minute[2] = ' ';
+        display_buffer_time_minute[3] = ' ';
+        display->display(display_buffer_time_minute);
+    }
+    // Display colon always
+    display->point(true);
+}
+
+void Clock::show_alarm_hour_blink() {
+    int8_t display_buffer_alarm_hour[4];
+
+    if (seconds_time % 2 == 0) {
+        // Split hours into two digits (e.g., 12 -> 1 and 2)
+        display_buffer_alarm_hour[0] = hour_alarm / 10;
+        display_buffer_alarm_hour[1] = hour_alarm % 10;
+        // Split minutes into two digits (e.g., 45 -> 4 and 5)
+        display_buffer_alarm_hour[2] = minutes_alarm / 10;
+        display_buffer_alarm_hour[3] = minutes_alarm % 10;
+        display->display(display_buffer_alarm_hour);  
+    } else {
+        // NOT display HOURS
+        display_buffer_alarm_hour[0] = ' ';
+        display_buffer_alarm_hour[1] = ' ';
+        // ONLY display MINUTES 
+        display_buffer_alarm_hour[2] = minutes_alarm / 10;
+        display_buffer_alarm_hour[3] = minutes_alarm % 10;
+        display->display(display_buffer_alarm_hour);
+    }
+    // Display colon always
+    display->point(true);
+}
+
+void Clock::show_alarm_minute_blink() {
+    int8_t display_buffer_alarm_minute[4];
+
+    if (seconds_time % 2 == 0) {
+        // Split hours into two digits (e.g., 12 -> 1 and 2)
+        display_buffer_alarm_minute[0] = hour_alarm / 10;
+        display_buffer_alarm_minute[1] = hour_alarm % 10;
+        // Split minutes into two digits (e.g., 45 -> 4 and 5)
+        display_buffer_alarm_minute[2] = minutes_alarm / 10;
+        display_buffer_alarm_minute[3] = minutes_alarm % 10;
+        display->display(display_buffer_alarm_minute);  
+    } else {
+        // NOT display HOURS
+        display_buffer_alarm_minute[0] = hour_alarm / 10;
+        display_buffer_alarm_minute[1] = hour_alarm % 10;
+        // ONLY display MINUTES 
+        display_buffer_alarm_minute[2] = ' ';
+        display_buffer_alarm_minute[3] = ' ';
+        display->display(display_buffer_alarm_minute);
+    }
+    // Display colon always
+    display->point(true);
+}
+
+/* BASIC FUNCTION:  Load and show current time in THIS Clock object on display
+*/
+void Clock::show()
+{
+    int8_t display_buffer[4];
+
+    if (status_button_OK == SETTIMEDONE) {
+        switch (status_button_menu) {
+            case SHOWTIME:
+                show_time();
+                break;
+            case SETTIME:
+                display_buffer[0] = 'S';
+                display_buffer[1] = 'E';
+                display_buffer[2] = 'T';
+                display_buffer[3] = ' ';
+                display->point(false);
+                // Send to the hardware
+                display->display(display_buffer);
+                break;
+            case SETALARM:
+                display_buffer[0] = 'A';
+                display_buffer[1] = 'L';
+                display_buffer[2] = ' ';
+                display_buffer[3] = ' ';
+                display->point(false);
+                // Send to the hardware
+                display->display(display_buffer);
+                break;
+            default:
+                break;
+        }
+    } else if (status_button_menu == SETTIME) {
+        if (status_button_OK == SETHOUR) {
+            show_time_hour_blink();
+        } else if (status_button_OK == SETMINUTE) {
+            show_time_minute_blink();
+        } else if (status_button_OK == SETTIMEDONE) {
+            show_time();
+        }
+    } else if (status_button_menu == SETALARM) {
+        if (status_button_OK == SETHOUR) {
+            show_alarm_hour_blink();
+        } else if (status_button_OK == SETMINUTE) {
+            show_alarm_minute_blink();
+        } else if (status_button_OK == SETTIMEDONE) {
+            show_time();
+        }
+    }
 }
 
 /*  Task 4 & Task 8:  Alarm will be triggerd, if alarm_time matches current_time.            
