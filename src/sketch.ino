@@ -72,7 +72,7 @@ void setup() {
      using the slide switch
   */
   clk.set_time(9, 00, 55);  
-  // clk.set_alarm(23, 03);
+  clk.set_alarm(9, 01);
   
   // Start the clock
   clk.run();

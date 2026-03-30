@@ -31,13 +31,15 @@ private:
     uint8_t hour_time = 0;
     uint8_t minutes_time = 0;
     uint8_t seconds_time = 0;
+    uint32_t time_current = 0; 
 
     /* Task3:   Both hour and minutes equal 0 this makes the alarm time set at 00:00 if no setup.
+    *  Task4:   Save alarm time.
     */
     uint8_t hour_alarm = 0;
     uint8_t minutes_alarm = 0;
-
-    bool alarm_on = false;
+    uint32_t time_alarm = 0; 
+    bool alarm_on = true;
 
 public:
     // Constructor
