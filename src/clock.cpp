@@ -146,9 +146,13 @@ void Clock::check_alarm()
 
     // If the switch is ON, check if the current time matches the alarm time
     if (this->hour_time == this->hour_alarm && this->minutes_time == this->minutes_alarm) {
-        // Play the alarm tone! 
-        // (Because this is called every second, it will keep ringing for the whole minute)
-        alarm_tone.play();
+        /* Task 10: The alarm should be only played for the first 30 seconds if it got not silenced in between. 
+        */
+        if (this->seconds_time < 30) {
+            alarm_tone.play(); 
+        } else {
+            alarm_tone.stop();
+        }
     } else {
         // If the times don't match, make sure the buzzer is quiet
         alarm_tone.stop();
