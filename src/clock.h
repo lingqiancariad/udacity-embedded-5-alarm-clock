@@ -54,6 +54,8 @@ private:
     uint8_t minutes_alarm = 0;
     uint32_t time_alarm = 0; 
     bool alarm_on = true;
+    bool alarm_blink_display_on = false;
+    uint8_t alarm_blank_timer = 3;
 
     MenuStatus status_button_menu = SHOWTIME;
     OKStatus status_button_OK  = SETTIMEDONE;
@@ -85,5 +87,7 @@ public:
     void show_time_minute_blink();
     void show_alarm_hour_blink();
     void show_alarm_minute_blink();
+    void show_alarm_blink();
+    void show_alarm_blank();
     void run();
 };

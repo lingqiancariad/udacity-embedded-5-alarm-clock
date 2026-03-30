@@ -94,8 +94,41 @@ void Clock::button_pressed(ButtonType button_type)
             }
             break;
         case BUTTON_MINUS:
-            // todo
-            std::cout << "Starting a new adventure...\n";
+            if (status_button_menu == SETTIME) {
+                if (status_button_OK == SETHOUR) {
+                    if (hour_time == 0) {
+                        hour_time = 23;
+                    } else {
+                        hour_time--;
+                    }
+                } else if (status_button_OK == SETMINUTE) {
+                    if (minutes_time == 0) {
+                        minutes_time = 59;
+                    } else {
+                        minutes_time--;
+                    }
+                } else {
+                    // do nothing
+                }
+            } else if (status_button_menu == SETALARM) {
+                if (status_button_OK == SETHOUR) {
+                    if (hour_alarm == 0) {
+                        hour_alarm = 23;
+                    } else {
+                        hour_alarm--;
+                    }
+                } else if (status_button_OK == SETMINUTE) {
+                    if (minutes_alarm == 0) {
+                        minutes_alarm = 59;
+                    } else {
+                        minutes_alarm--;
+                    }
+                } else {
+                    // do nothing
+                }
+            } else {
+                // do nothing
+            }
             break;
         case BUTTON_OK:
             // Execute "Status Lock" for changing status_button_OK, if button 'MENU' is idle.
@@ -117,11 +150,43 @@ void Clock::button_pressed(ButtonType button_type)
             }
             break;
         case BUTTON_PLUS:
-            // todo
-            std::cout << "Starting a new adventure...\n";
+            if (status_button_menu == SETTIME) {
+                if (status_button_OK == SETHOUR) {
+                    if (hour_time == 23) {
+                        hour_time = 0;
+                    } else {
+                        hour_time++;
+                    }
+                } else if (status_button_OK == SETMINUTE) {
+                    if (minutes_time == 59) {
+                        minutes_time = 0;
+                    } else {
+                        minutes_time++;
+                    }
+                } else {
+                    // do nothing
+                }
+            } else if (status_button_menu == SETALARM) {
+                if (status_button_OK == SETHOUR) {
+                    if (hour_alarm == 23) {
+                        hour_alarm = 0;
+                    } else {
+                        hour_alarm++;
+                    }
+                } else if (status_button_OK == SETMINUTE) {
+                    if (minutes_alarm == 59) {
+                        minutes_alarm = 0;
+                    } else {
+                        minutes_alarm++;
+                    }
+                } else {
+                    // do nothing
+                }
+            } else {
+                // do nothing
+            }
             break;
         default:
-            std::cout << "Starting a new adventure...\n";
             break;
     }
 }
@@ -254,6 +319,44 @@ void Clock::show_alarm_minute_blink() {
     display->point(true);
 }
 
+void Clock::show_alarm_blink() {
+    int8_t display_buffer_alarm_blink[4];
+    if (seconds_time % 2 == 0) {
+        // Split hours into two digits (e.g., 12 -> 1 and 2)
+        display_buffer_alarm_blink[0] = hour_alarm / 10;
+        display_buffer_alarm_blink[1] = hour_alarm % 10;
+        // Split minutes into two digits (e.g., 45 -> 4 and 5)
+        display_buffer_alarm_blink[2] = minutes_alarm / 10;
+        display_buffer_alarm_blink[3] = minutes_alarm % 10;
+        display->display(display_buffer_alarm_blink);  
+        // Enable colon
+        display->point(false);
+    } else {
+        // NOT display HOURS
+        display_buffer_alarm_blink[0] = ' ';
+        display_buffer_alarm_blink[1] = ' ';
+        // NOT display MINUTES 
+        display_buffer_alarm_blink[2] = ' ';
+        display_buffer_alarm_blink[3] = ' ';
+        display->display(display_buffer_alarm_blink);
+        // Disable colon
+        display->point(true);
+    }
+}
+
+void Clock::show_alarm_blank(){
+    int8_t display_buffer_alarm_blank[4];
+    // NOT display HOURS
+    display_buffer_alarm_blank[0] = ' ';
+    display_buffer_alarm_blank[1] = ' ';
+    // NOT display MINUTES 
+    display_buffer_alarm_blank[2] = ' ';
+    display_buffer_alarm_blank[3] = ' ';
+    display->display(display_buffer_alarm_blank);
+    // Disable colon
+    display->point(true);
+}
+
 /* BASIC FUNCTION:  Load and show current time in THIS Clock object on display
 */
 void Clock::show()
@@ -263,7 +366,11 @@ void Clock::show()
     if (status_button_OK == SETTIMEDONE) {
         switch (status_button_menu) {
             case SHOWTIME:
-                show_time();
+                if (alarm_blink_display_on == true) {
+                    show_alarm_blink();
+                } else {
+                    show_time();
+                }
                 break;
             case SETTIME:
                 display_buffer[0] = 'S';
@@ -294,7 +401,7 @@ void Clock::show()
         } else if (status_button_OK == SETTIMEDONE) {
             show_time();
         }
-    } else if (status_button_menu == SETALARM) {
+    } else if (status_button_menu == SETALARM && alarm_on == true) {
         if (status_button_OK == SETHOUR) {
             show_alarm_hour_blink();
         } else if (status_button_OK == SETMINUTE) {
@@ -302,7 +409,18 @@ void Clock::show()
         } else if (status_button_OK == SETTIMEDONE) {
             show_time();
         }
-    }
+    } 
+    /*
+    else if (status_button_menu == SETALARM && alarm_on != true) {
+        alarm_blank_timer--;
+        if (alarm_blank_timer != 0) {
+            show_alarm_blank();
+        } else {
+            alarm_blank_timer = 3;
+            status_button_menu = SHOWTIME;
+            show_time();
+        }
+    }*/
 }
 
 /*  Task 4 & Task 8:  Alarm will be triggerd, if alarm_time matches current_time.            
@@ -313,6 +431,7 @@ void Clock::check_alarm()
     */
     if (!this->alarm_on) {
         alarm_tone.stop();
+        alarm_blink_display_on = false;
         return; 
     }
 
@@ -321,8 +440,10 @@ void Clock::check_alarm()
         /* Task 10: The alarm should be only played for the first 30 seconds if it got not silenced in between. 
         */
         if (this->seconds_time < 30) {
+            alarm_blink_display_on = true;
             alarm_tone.play(); 
         } else {
+            alarm_blink_display_on = false;
             alarm_tone.stop();
         }
     } else {
@@ -389,6 +510,4 @@ void Clock::run()
     timer = timerBegin(1000000); // V3 API
     timerAttachInterrupt(timer, &update_time); // V3 API
     timerAlarm(timer, 1000000, true, 0); // V3 API
-    
-    
 }
