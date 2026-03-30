@@ -133,17 +133,18 @@ void Clock::show()
     display->display(display_buffer);
 }
 
-/*  Task 4:  Alarm will be triggerd, if alarm_time matches current_time.
+/*  Task 4:  Alarm will be triggerd, if alarm_time matches current_time.            
 */
 void Clock::check_alarm()
 {
-    // 1. If the physical alarm switch is OFF, ensure the buzzer is quiet
+    /* Task 11: If the physical alarm switch is OFF, ensure the buzzer is quiet.
+    */
     if (!this->alarm_on) {
         alarm_tone.stop();
         return; 
     }
 
-    // 2. If the switch is ON, check if the current time matches the alarm time
+    // If the switch is ON, check if the current time matches the alarm time
     if (this->hour_time == this->hour_alarm && this->minutes_time == this->minutes_alarm) {
         // Play the alarm tone! 
         // (Because this is called every second, it will keep ringing for the whole minute)
