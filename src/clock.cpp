@@ -118,7 +118,16 @@ void Clock::show()
     display_buffer[3] = minutes_time % 10;
 
     // Turn on the colon (:) in the middle
-    display->point(true); 
+    // display->point(true);
+
+    /* Task 5:  Make the colon blinks every two seconds.
+    *           Use the modulo operator (%) to check if the second is even or odd.
+    */
+    if (seconds_time % 2 == 0) {
+        display->point(true);   
+    } else {
+        display->point(false);
+    }
     
     // Send to the hardware
     display->display(display_buffer);
