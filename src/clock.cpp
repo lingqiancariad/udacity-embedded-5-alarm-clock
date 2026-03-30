@@ -133,7 +133,7 @@ void Clock::show()
     display->display(display_buffer);
 }
 
-/*  Task 4:  Alarm will be triggerd, if alarm_time matches current_time.            
+/*  Task 4 & Task 8:  Alarm will be triggerd, if alarm_time matches current_time.            
 */
 void Clock::check_alarm()
 {
