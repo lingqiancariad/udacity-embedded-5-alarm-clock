@@ -148,6 +148,9 @@ void Clock::button_pressed(ButtonType button_type)
                         break;
                 }
             }
+            if (alarm_blink_display_on == true) {
+                this->alarm_off_ok_button = true;
+            }
             break;
         case BUTTON_PLUS:
             if (status_button_menu == SETTIME) {
@@ -344,17 +347,17 @@ void Clock::show_alarm_blink() {
     }
 }
 
-void Clock::show_alarm_blank(){
-    int8_t display_buffer_alarm_blank[4];
+void Clock::show_alarm_off(){
+    int8_t display_buffer_alarm_off[4];
     // NOT display HOURS
-    display_buffer_alarm_blank[0] = ' ';
-    display_buffer_alarm_blank[1] = ' ';
+    display_buffer_alarm_off[0] = 'O';
+    display_buffer_alarm_off[1] = 'F';
     // NOT display MINUTES 
-    display_buffer_alarm_blank[2] = ' ';
-    display_buffer_alarm_blank[3] = ' ';
-    display->display(display_buffer_alarm_blank);
+    display_buffer_alarm_off[2] = 'F';
+    display_buffer_alarm_off[3] = ' ';
+    display->display(display_buffer_alarm_off);
     // Disable colon
-    display->point(true);
+    display->point(false);
 }
 
 /* BASIC FUNCTION:  Load and show current time in THIS Clock object on display
@@ -409,18 +412,11 @@ void Clock::show()
         } else if (status_button_OK == SETTIMEDONE) {
             show_time();
         }
-    } 
-    /*
-    else if (status_button_menu == SETALARM && alarm_on != true) {
-        alarm_blank_timer--;
-        if (alarm_blank_timer != 0) {
-            show_alarm_blank();
-        } else {
-            alarm_blank_timer = 3;
-            status_button_menu = SHOWTIME;
-            show_time();
-        }
-    }*/
+    } else if (status_button_menu == SETALARM && alarm_on != true) {
+        alarm_off_display_on = true;
+    } else {
+        // do nothing...
+    }
 }
 
 /*  Task 4 & Task 8:  Alarm will be triggerd, if alarm_time matches current_time.            
@@ -429,7 +425,7 @@ void Clock::check_alarm()
 {
     /* Task 11: If the physical alarm switch is OFF, ensure the buzzer is quiet.
     */
-    if (!this->alarm_on) {
+    if (!this->alarm_on || this->alarm_off_ok_button) {
         alarm_tone.stop();
         alarm_blink_display_on = false;
         return; 
@@ -444,6 +440,7 @@ void Clock::check_alarm()
             alarm_tone.play(); 
         } else {
             alarm_blink_display_on = false;
+            alarm_off_ok_button = false;
             alarm_tone.stop();
         }
     } else {
@@ -472,9 +469,22 @@ void Clock::tick()
             }
         }
     }
-
+    
+    if (alarm_off_display_on) {
+        target_time_alarm_off_display = time_current + 3;
+        alarm_off_display_on = false;
+        status_button_menu = SHOWTIME;
+        status_button_OK = SETTIMEDONE;
+    }
+    
     // Update the display with the new time
-    show();
+    if (time_current <= target_time_alarm_off_display) {
+        show_alarm_off();
+    } else {
+        show();
+    }
+
+    //show();
 
     // Check if the alarm should go off (if you've implemented it)
     check_alarm(); 
