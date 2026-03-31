@@ -65,7 +65,7 @@ void setup() {
   
   // Clock class init
   clk.init(&display, BUZZER_PIN);
-  //clk.turn_alarm(digitalRead(ALARM_PIN));
+  clk.turn_alarm(digitalRead(ALARM_PIN));
   /* Uncomment the following lines to set the time 
      and alarm for testing, it will set it to 23:02:55 
      with alarm at 23:03. Remember to enable the alarm
