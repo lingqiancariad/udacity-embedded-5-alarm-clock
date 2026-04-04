@@ -15,16 +15,16 @@ enum ButtonType
 
 enum MenuStatus
 {
-  SHOWTIME,
-  SETTIME,
-  SETALARM,
+  MENU_IDLE,
+  MENU_SETTIME,
+  MENU_SETALARM,
 };
 
 enum OKStatus
 {
-  SETTIMEDONE,
-  SETHOUR,
-  SETMINUTE,
+  OK_IDLE,
+  OK_SETHOUR,
+  OK_SETMINUTE,
 };
 
 class Clock
@@ -42,7 +42,7 @@ private:
 
     /* Task1:   Both hour and minutes equal 0 this makes the clock time starts at 00:00
     */
-    uint8_t hour_time = 0;
+    uint8_t hours_time = 0;
     uint8_t minutes_time = 0;
     uint8_t seconds_time = 0;
     uint32_t time_current = 0; 
@@ -50,17 +50,22 @@ private:
     /* Task3:   Both hour and minutes equal 0 this makes the alarm time set at 00:00 if no setup.
     *  Task4:   Save alarm time.
     */
-    uint8_t hour_alarm = 0;
+    uint8_t hours_alarm = 0;
     uint8_t minutes_alarm = 0;
     uint32_t time_alarm = 0; 
-    bool alarm_on = true;
-    bool alarm_blink_display_on = false;
-    bool alarm_off_display_on = false;
-    uint32_t target_time_alarm_off_display = 0;
-    bool alarm_off_ok_button = false;
 
-    MenuStatus status_button_menu = SHOWTIME;
-    OKStatus status_button_OK  = SETTIMEDONE;
+    /* Task 6 & 7: Status of 'OK' and 'MENU' buttons.
+    */
+    MenuStatus status_button_menu = MENU_IDLE;
+    OKStatus status_button_OK  = OK_IDLE;
+
+    bool alarm_on = true;                             // Status of slide switch
+    bool alarm_blinking = false;                      // Status of if alarm should blink
+    bool alarm_display_OFF = false;                   // Status of if alarm should display 'OFF'
+    uint32_t target_time_alarm_off_display = 0;       // The target time the alarm should stop displying 'OFF'
+    bool alarm_off_ok_button = false;                 // Status of if OK is confirmed to stop alarm.
+
+ 
 
 public:
     // Constructor
@@ -80,9 +85,10 @@ public:
     void turn_alarm(bool on_off);
     void check_alarm();
 
+    // Main function which being called by timer interrupts every sec
     void tick();
 
-    // Clock functions 
+    // Display functions 
     void show();
     void show_time();
     void show_time_hour_blink();

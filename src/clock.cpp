@@ -1,14 +1,15 @@
 /* 
     FUNCTION CHECKLIST:
-    1. CLOCK:                       done
-    2. SET TIME:                    done
-    3. SET ALARM:                   done
-    4. ALARM ON/OFF SWITCH:         done
-    5. MENU BUTTON:                 
-    6. SET CURRENT TIME BY BUTTONS: 
-    7. SET ALARM TIME BY BUTTONS:   
-    8. CLEAR ALARM BY OK BUTTON:    
-   ... 
+    1. CLOCK:                                   done
+    2. SET TIME:                                done
+    3. SET ALARM:                               done
+    4. ALARM ON/OFF SWITCH:                     done
+    5. MENU BUTTON:                             done
+    6. SET CURRENT TIME BY BUTTONS:             done
+    7. SET ALARM TIME BY BUTTONS:               done
+    8. CLEAR ALARM BY OK BUTTON:                done
+    9. ALARM BLINKING AND BUZZERING 30 SEC:     done
+    10. ALARM DISPLAY 'OFF' IF DISABLED:        done
 */
 
 #include "clock.h"
@@ -57,7 +58,7 @@ void Clock::init(TM1637* display, uint8_t buzzer_pin)
 */
 void Clock::set_time(uint8_t hour, uint8_t minutes, uint8_t seconds)
 {   
-    this->hour_time = hour;
+    this->hours_time = hour;
     this->minutes_time = minutes;
     this->seconds_time = seconds;
     this->time_current = (hour * 3600) + (minutes * 60) + seconds;
@@ -67,41 +68,45 @@ void Clock::set_time(uint8_t hour, uint8_t minutes, uint8_t seconds)
 */
 void Clock::set_alarm(uint8_t hour, uint8_t minutes)
 {
-    this->hour_alarm = hour;
+    this->hours_alarm = hour;
     this->minutes_alarm = minutes;
     this->time_alarm = (hour * 3600) + (minutes * 60);
 }
 
-// Clock::menu_pressed(): Tell the internal clock that a button was pressed
-//                        type: The button that was pressed
+/* TASK 6:  Build up status machine for button pressed.
+            - BUTTON_MENU:  Switch between IDLE(0), SETTIME(1) and SETALARM(2). The status can only be changed when the button 'OK' is idle.
+            - BUTTON_MINUS: Decrease hours or minutes for setting time or alarm. 
+            - BUTTON_OK:    Switch between IDEL(0), SETHOUR(1) and SETMINUTE(2). The status can only be changed when the button 'MENU' is idle.
+            - BUTTON_PLUS:  Increase hours or minutes for setting time or alarm.          
+*/
 void Clock::button_pressed(ButtonType button_type) 
 {
     switch (button_type) {
         case BUTTON_MENU:
             // Execute "Status Lock" for changing status_button_menu, if button 'OK' is NOT idle.
-            if (status_button_OK == SETTIMEDONE) {
+            if (status_button_OK == OK_IDLE) {
                 switch(status_button_menu) {
-                    case SHOWTIME:
-                        status_button_menu = SETTIME;
+                    case MENU_IDLE:
+                        status_button_menu = MENU_SETTIME;
                         break;
-                    case SETTIME:
-                        status_button_menu = SETALARM;
+                    case MENU_SETTIME:
+                        status_button_menu = MENU_SETALARM;
                         break;
-                    case SETALARM:
-                        status_button_menu = SHOWTIME;
+                    case MENU_SETALARM:
+                        status_button_menu = MENU_IDLE;
                         break;
                 }
             }
             break;
         case BUTTON_MINUS:
-            if (status_button_menu == SETTIME) {
-                if (status_button_OK == SETHOUR) {
-                    if (hour_time == 0) {
-                        hour_time = 23;
+            if (status_button_menu == MENU_SETTIME) {
+                if (status_button_OK == OK_SETHOUR) {
+                    if (hours_time == 0) {
+                        hours_time = 23;
                     } else {
-                        hour_time--;
+                        hours_time--;
                     }
-                } else if (status_button_OK == SETMINUTE) {
+                } else if (status_button_OK == OK_SETMINUTE) {
                     if (minutes_time == 0) {
                         minutes_time = 59;
                     } else {
@@ -110,14 +115,14 @@ void Clock::button_pressed(ButtonType button_type)
                 } else {
                     // do nothing
                 }
-            } else if (status_button_menu == SETALARM) {
-                if (status_button_OK == SETHOUR) {
-                    if (hour_alarm == 0) {
-                        hour_alarm = 23;
+            } else if (status_button_menu == MENU_SETALARM) {
+                if (status_button_OK == OK_SETHOUR) {
+                    if (hours_alarm == 0) {
+                        hours_alarm = 23;
                     } else {
-                        hour_alarm--;
+                        hours_alarm--;
                     }
-                } else if (status_button_OK == SETMINUTE) {
+                } else if (status_button_OK == OK_SETMINUTE) {
                     if (minutes_alarm == 0) {
                         minutes_alarm = 59;
                     } else {
@@ -132,35 +137,37 @@ void Clock::button_pressed(ButtonType button_type)
             break;
         case BUTTON_OK:
             // Execute "Status Lock" for changing status_button_OK, if button 'MENU' is idle.
-            if (status_button_menu != SHOWTIME) {
+            if (status_button_menu != MENU_IDLE) {
                 switch (status_button_OK) {
-                    case SETTIMEDONE:
-                        status_button_OK = SETHOUR;
+                    case OK_IDLE:
+                        status_button_OK = OK_SETHOUR;
                         break;
-                    case SETHOUR:
-                        status_button_OK = SETMINUTE;
+                    case OK_SETHOUR:
+                        status_button_OK = OK_SETMINUTE;
                         break;
-                    case SETMINUTE:
-                        status_button_OK = SETTIMEDONE;
-                        status_button_menu = SHOWTIME;
+                    case OK_SETMINUTE:
+                        status_button_OK = OK_IDLE;
+                        status_button_menu = MENU_IDLE;
                         break;
                     default:                                            
                         break;
                 }
             }
-            if (alarm_blink_display_on == true) {
+            /* Task 9: Alarm can by stopped by the 'OK' button.
+            */
+            if (alarm_blinking == true) {
                 this->alarm_off_ok_button = true;
             }
             break;
         case BUTTON_PLUS:
-            if (status_button_menu == SETTIME) {
-                if (status_button_OK == SETHOUR) {
-                    if (hour_time == 23) {
-                        hour_time = 0;
+            if (status_button_menu == MENU_SETTIME) {
+                if (status_button_OK == OK_SETHOUR) {
+                    if (hours_time == 23) {
+                        hours_time = 0;
                     } else {
-                        hour_time++;
+                        hours_time++;
                     }
-                } else if (status_button_OK == SETMINUTE) {
+                } else if (status_button_OK == OK_SETMINUTE) {
                     if (minutes_time == 59) {
                         minutes_time = 0;
                     } else {
@@ -169,14 +176,14 @@ void Clock::button_pressed(ButtonType button_type)
                 } else {
                     // do nothing
                 }
-            } else if (status_button_menu == SETALARM) {
-                if (status_button_OK == SETHOUR) {
-                    if (hour_alarm == 23) {
-                        hour_alarm = 0;
+            } else if (status_button_menu == MENU_SETALARM) {
+                if (status_button_OK == OK_SETHOUR) {
+                    if (hours_alarm == 23) {
+                        hours_alarm = 0;
                     } else {
-                        hour_alarm++;
+                        hours_alarm++;
                     }
-                } else if (status_button_OK == SETMINUTE) {
+                } else if (status_button_OK == OK_SETMINUTE) {
                     if (minutes_alarm == 59) {
                         minutes_alarm = 0;
                     } else {
@@ -205,11 +212,13 @@ void Clock::turn_alarm(bool on_off)
     }
 }
 
+/* TASK 5:  Show current time.        
+*/
 void Clock::show_time() {
     int8_t display_buffer_time[4];
     // Split hours into two digits (e.g., 12 -> 1 and 2)
-    display_buffer_time[0] = hour_time / 10;
-    display_buffer_time[1] = hour_time % 10;
+    display_buffer_time[0] = hours_time / 10;
+    display_buffer_time[1] = hours_time % 10;
     // Split minutes into two digits (e.g., 45 -> 4 and 5)
     display_buffer_time[2] = minutes_time / 10;
     display_buffer_time[3] = minutes_time % 10;
@@ -226,13 +235,15 @@ void Clock::show_time() {
     }
 }
 
+/* TASK 6:  Show setting hour blinking.        
+*/
 void Clock::show_time_hour_blink() {
     int8_t display_buffer_time_hour[4];
 
     if (seconds_time % 2 == 0) {
         // Split hours into two digits (e.g., 12 -> 1 and 2)
-        display_buffer_time_hour[0] = hour_time / 10;
-        display_buffer_time_hour[1] = hour_time % 10;
+        display_buffer_time_hour[0] = hours_time / 10;
+        display_buffer_time_hour[1] = hours_time % 10;
         // Split minutes into two digits (e.g., 45 -> 4 and 5)
         display_buffer_time_hour[2] = minutes_time / 10;
         display_buffer_time_hour[3] = minutes_time % 10;
@@ -250,21 +261,23 @@ void Clock::show_time_hour_blink() {
     display->point(true);
 }
 
+/* TASK 6:  Show setting minute blinking.        
+*/
 void Clock::show_time_minute_blink() {
     int8_t display_buffer_time_minute[4];
 
     if (seconds_time % 2 == 0) {
         // Split hours into two digits (e.g., 12 -> 1 and 2)
-        display_buffer_time_minute[0] = hour_time / 10;
-        display_buffer_time_minute[1] = hour_time % 10;
+        display_buffer_time_minute[0] = hours_time / 10;
+        display_buffer_time_minute[1] = hours_time % 10;
         // Split minutes into two digits (e.g., 45 -> 4 and 5)
         display_buffer_time_minute[2] = minutes_time / 10;
         display_buffer_time_minute[3] = minutes_time % 10;
         display->display(display_buffer_time_minute);  
     } else {
         // NOT display HOURS
-        display_buffer_time_minute[0] = hour_time / 10;
-        display_buffer_time_minute[1] = hour_time % 10;
+        display_buffer_time_minute[0] = hours_time / 10;
+        display_buffer_time_minute[1] = hours_time % 10;
         // ONLY display MINUTES 
         display_buffer_time_minute[2] = ' ';
         display_buffer_time_minute[3] = ' ';
@@ -274,13 +287,15 @@ void Clock::show_time_minute_blink() {
     display->point(true);
 }
 
+/* TASK 7:  Show setting alarm hour blinking.        
+*/
 void Clock::show_alarm_hour_blink() {
     int8_t display_buffer_alarm_hour[4];
 
     if (seconds_time % 2 == 0) {
         // Split hours into two digits (e.g., 12 -> 1 and 2)
-        display_buffer_alarm_hour[0] = hour_alarm / 10;
-        display_buffer_alarm_hour[1] = hour_alarm % 10;
+        display_buffer_alarm_hour[0] = hours_alarm / 10;
+        display_buffer_alarm_hour[1] = hours_alarm % 10;
         // Split minutes into two digits (e.g., 45 -> 4 and 5)
         display_buffer_alarm_hour[2] = minutes_alarm / 10;
         display_buffer_alarm_hour[3] = minutes_alarm % 10;
@@ -298,21 +313,23 @@ void Clock::show_alarm_hour_blink() {
     display->point(true);
 }
 
+/* TASK 7:  Show setting alarm minute blinking.        
+*/
 void Clock::show_alarm_minute_blink() {
     int8_t display_buffer_alarm_minute[4];
 
     if (seconds_time % 2 == 0) {
         // Split hours into two digits (e.g., 12 -> 1 and 2)
-        display_buffer_alarm_minute[0] = hour_alarm / 10;
-        display_buffer_alarm_minute[1] = hour_alarm % 10;
+        display_buffer_alarm_minute[0] = hours_alarm / 10;
+        display_buffer_alarm_minute[1] = hours_alarm % 10;
         // Split minutes into two digits (e.g., 45 -> 4 and 5)
         display_buffer_alarm_minute[2] = minutes_alarm / 10;
         display_buffer_alarm_minute[3] = minutes_alarm % 10;
         display->display(display_buffer_alarm_minute);  
     } else {
         // NOT display HOURS
-        display_buffer_alarm_minute[0] = hour_alarm / 10;
-        display_buffer_alarm_minute[1] = hour_alarm % 10;
+        display_buffer_alarm_minute[0] = hours_alarm / 10;
+        display_buffer_alarm_minute[1] = hours_alarm % 10;
         // ONLY display MINUTES 
         display_buffer_alarm_minute[2] = ' ';
         display_buffer_alarm_minute[3] = ' ';
@@ -322,12 +339,14 @@ void Clock::show_alarm_minute_blink() {
     display->point(true);
 }
 
+/* TASK 8:  Show alarm blinking, when the alarm is triggerd.        
+*/
 void Clock::show_alarm_blink() {
     int8_t display_buffer_alarm_blink[4];
     if (seconds_time % 2 == 0) {
         // Split hours into two digits (e.g., 12 -> 1 and 2)
-        display_buffer_alarm_blink[0] = hour_alarm / 10;
-        display_buffer_alarm_blink[1] = hour_alarm % 10;
+        display_buffer_alarm_blink[0] = hours_alarm / 10;
+        display_buffer_alarm_blink[1] = hours_alarm % 10;
         // Split minutes into two digits (e.g., 45 -> 4 and 5)
         display_buffer_alarm_blink[2] = minutes_alarm / 10;
         display_buffer_alarm_blink[3] = minutes_alarm % 10;
@@ -347,6 +366,8 @@ void Clock::show_alarm_blink() {
     }
 }
 
+/* TASK ?:  Display 'OFF', when the slide switch is off.        
+*/
 void Clock::show_alarm_off(){
     int8_t display_buffer_alarm_off[4];
     // NOT display HOURS
@@ -360,22 +381,24 @@ void Clock::show_alarm_off(){
     display->point(false);
 }
 
-/* BASIC FUNCTION:  Load and show current time in THIS Clock object on display
+/* BASIC FUNCTION:  Entrance show function.
+                    Build up a status machine to show different programs.
+                    This function will be called every sec by 'tick()' in timer interrupts.
 */
 void Clock::show()
 {
     int8_t display_buffer[4];
 
-    if (status_button_OK == SETTIMEDONE) {
+    if (status_button_OK == OK_IDLE) {
         switch (status_button_menu) {
-            case SHOWTIME:
-                if (alarm_blink_display_on == true) {
+            case MENU_IDLE:
+                if (alarm_blinking == true) {
                     show_alarm_blink();
                 } else {
                     show_time();
                 }
                 break;
-            case SETTIME:
+            case MENU_SETTIME:
                 display_buffer[0] = 'S';
                 display_buffer[1] = 'E';
                 display_buffer[2] = 'T';
@@ -384,7 +407,7 @@ void Clock::show()
                 // Send to the hardware
                 display->display(display_buffer);
                 break;
-            case SETALARM:
+            case MENU_SETALARM:
                 display_buffer[0] = 'A';
                 display_buffer[1] = 'L';
                 display_buffer[2] = ' ';
@@ -396,24 +419,24 @@ void Clock::show()
             default:
                 break;
         }
-    } else if (status_button_menu == SETTIME) {
-        if (status_button_OK == SETHOUR) {
+    } else if (status_button_menu == MENU_SETTIME) {
+        if (status_button_OK == OK_SETHOUR) {
             show_time_hour_blink();
-        } else if (status_button_OK == SETMINUTE) {
+        } else if (status_button_OK == OK_SETMINUTE) {
             show_time_minute_blink();
-        } else if (status_button_OK == SETTIMEDONE) {
+        } else if (status_button_OK == OK_IDLE) {
             show_time();
         }
-    } else if (status_button_menu == SETALARM && alarm_on == true) {
-        if (status_button_OK == SETHOUR) {
+    } else if (status_button_menu == MENU_SETALARM && alarm_on == true) {
+        if (status_button_OK == OK_SETHOUR) {
             show_alarm_hour_blink();
-        } else if (status_button_OK == SETMINUTE) {
+        } else if (status_button_OK == OK_SETMINUTE) {
             show_alarm_minute_blink();
-        } else if (status_button_OK == SETTIMEDONE) {
+        } else if (status_button_OK == OK_IDLE) {
             show_time();
         }
-    } else if (status_button_menu == SETALARM && alarm_on != true) {
-        alarm_off_display_on = true;
+    } else if (status_button_menu == MENU_SETALARM && alarm_on != true) {
+        alarm_display_OFF = true;
     } else {
         // do nothing...
     }
@@ -423,24 +446,25 @@ void Clock::show()
 */
 void Clock::check_alarm()
 {
-    /* Task 11: If the physical alarm switch is OFF, ensure the buzzer is quiet.
+    /*  Task 11: If the physical alarm switch is OFF, alarm will be stopped or not be triggered.
+        Task 10: If 'OK' is pushed, alarm will be stopped.
     */
     if (!this->alarm_on || this->alarm_off_ok_button) {
-        alarm_tone.stop();
-        alarm_blink_display_on = false;
+        alarm_tone.stop();                      // Tone off
+        alarm_blinking = false;                 // Blinking off
         return; 
     }
 
     // If the switch is ON, check if the current time matches the alarm time
-    if (this->hour_time == this->hour_alarm && this->minutes_time == this->minutes_alarm) {
+    if (this->hours_time == this->hours_alarm && this->minutes_time == this->minutes_alarm) {
         /* Task 10: The alarm should be only played for the first 30 seconds if it got not silenced in between. 
         */
         if (this->seconds_time < 30) {
-            alarm_blink_display_on = true;
+            alarm_blinking = true;
             alarm_tone.play(); 
         } else {
-            alarm_blink_display_on = false;
-            alarm_off_ok_button = false;
+            alarm_blinking = false;
+            alarm_off_ok_button = false;        // Reset the status of pushed 'OK' after the 30 sec period is gone.
             alarm_tone.stop();
         }
     } else {
@@ -463,18 +487,18 @@ void Clock::tick()
         minutes_time++;
         if (minutes_time >= 60) {
             minutes_time = 0;
-            hour_time++;
-            if (hour_time >= 24) {
-                hour_time = 0;
+            hours_time++;
+            if (hours_time >= 24) {
+                hours_time = 0;
             }
         }
     }
     
-    if (alarm_off_display_on) {
+    if (alarm_display_OFF) {
         target_time_alarm_off_display = time_current + 3;
-        alarm_off_display_on = false;
-        status_button_menu = SHOWTIME;
-        status_button_OK = SETTIMEDONE;
+        alarm_display_OFF = false;          // Reset flag 
+        status_button_menu = MENU_IDLE;     // Set 'MENU' to idle
+        status_button_OK = OK_IDLE;         // Set 'OK' to idle
     }
     
     // Update the display with the new time
@@ -486,7 +510,7 @@ void Clock::tick()
 
     //show();
 
-    // Check if the alarm should go off (if you've implemented it)
+    // Check if the alarm should go off
     check_alarm(); 
 
     // If current time reaches 24:00:00, reset the current time variable back to 00:00:00. 
@@ -503,19 +527,20 @@ void Clock::run()
     /* TASK 1:  Allow to trigger timer every 1 sec in the run()
                 every timeout will update the time variables in THIS Clock object.
     */
+
+    /* Timer solution for esp32 arduino core 2.x */
     // 1. Load THIS specific clock object into our global pointer
-    global_clock_ptr = this;
+    //global_clock_ptr = this;
     // 2. Initialize the timer-> Timer 0, prescaler of 80 (makes the timer tick at 1 MHz, or 1 microsecond per tick)
-    // timer = timerBegin(0, 80, true);
+    //timer = timerBegin(0, 80, true);
     // 3. Attach the interrupt function. The function will call Clock::tick() and with it the show() 
-    // timerAttachInterrupt(timer, &update_time, true);
+    //timerAttachInterrupt(timer, &update_time, true);
     // 4. Set the timer to trigger every 1,000,000 microseconds (1 second) -> the update_time() will be called every one sec.
-    // timerAlarmWrite(timer, 1000000, true);
+    //timerAlarmWrite(timer, 1000000, true);
     // 5. Start the timer!
-    // timerAlarmEnable(timer);
+    //timerAlarmEnable(timer);
 
-    ///* timer solution for Wokwi online for esp32 arduino core 3.0
-
+    /* Timer solution for Wokwi online for esp32 arduino core 3.x */
     global_clock_ptr = this;
     timer = timerBegin(1000000); // V3 API
     timerAttachInterrupt(timer, &update_time); // V3 API
